@@ -6,6 +6,7 @@
 
 # Ignore bundler config.
 /.bundle
+
 # Ignore the default SQLite database.
 server/db/test
 server/db/development
@@ -17,7 +18,6 @@ server/db/*.sqlite3-journal
 /log/*
 .keep
 tmp/
-.env
 .byebug_history
 Gemfile.lock
 android/app/build/
@@ -86,5 +86,5 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+#.env
 
