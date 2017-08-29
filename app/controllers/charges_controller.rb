@@ -24,7 +24,9 @@ class ChargesController < ApplicationController
 			locations_response = locations_api.list_locations
 			puts locations_response
 		rescue SquareConnect::ApiError => e
-			raise "Error encountered while listing locations: #{e.message}"
+            raise "Error encountered while listing locations: #{e.message}"
+            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+            return
 		end
 
 		# Get a location able to process transaction
@@ -79,7 +81,8 @@ class ChargesController < ApplicationController
 		begin
 			transaction_response = transaction_api.charge(location.id, transaction_request)
 		rescue SquareConnect::ApiError => e
-			raise "Error encountered while charging card: #{e.message}"
+            raise "Error encountered while charging card: #{e.message}"
+            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
 			return
 		end
 
@@ -112,8 +115,8 @@ class ChargesController < ApplicationController
 		begin
 			transaction_response = transactions_api.charge(location.id, request_body)
 		rescue SquareConnect::ApiError => e
-			Rails.logger.error("Error encountered while charging card:: #{e.message}")
-			render json: {:status => 400, :errors => JSON.parse(e.response_body)["errors"]}
+            Rails.logger.error("Error encountered while charging card:: #{e.message}")
+            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
 			return
 		end
 		puts transaction_response
