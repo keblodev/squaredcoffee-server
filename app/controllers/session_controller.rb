@@ -6,7 +6,7 @@ class SessionController < ApplicationController
 
     def create
         puts "ok1"
-        puts params[:session]
+        puts request.headers.inspect
         puts "ak1"
 
 		user = User.find_by_email(params[:session][:email])

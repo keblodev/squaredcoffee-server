@@ -18,8 +18,7 @@ class CardsController < ApplicationController
 	def new
         customer_card_api = SquareConnect::CustomersApi.new
 
-        puts "OOOLLLL"
-        puts "OOOLLLL"
+        puts request.headers.inspect
 
 		customer_card_request = {
 			card_nonce: params[:nonce],
