@@ -8,7 +8,12 @@ Rails.application.routes.draw do
 	# You can have the root of your site routed with "root"
 	root 'root#js'
 
-	get '/signup' => 'users#new'
+    post '/login' => 'session#create'
+
+    post '/logout' => 'session#destroy'
+
+	post '/signup' => 'users#new'
+	post '/signup_remote' => 'users#new_remote'
 
 	post '/card/new' => 'cards#new'
 
