@@ -67,7 +67,9 @@ class ChargesController < ApplicationController
 
 		user = get_user(params[:token])
 
-		customer_id = user[:remote_id]
+        customer_id = user[:remote_id]
+
+        remote_user = get_remote_user(customer_id);
 
 		transaction_request = {
 			:customer_id => user[:remote_id],
@@ -138,11 +140,23 @@ class ChargesController < ApplicationController
 		# ReceiptMailer.charge_email(params[:email],data).deliver_now if Rails.env == "development"
 
 		render json: {:status => 200, :resp => transaction_response}
-	end
+    end
 
 	def get_user(user_auth_token)
 		# TODO: do Token model
 		# exps and created fields
 		@user ||= User.find(session[:user_id]) if session[:user_id] else User.where("auth_token = ? ", user_auth_token).first
-	end
+    end
+
+    def get_remote_user(remote_id)
+        begin
+            api = SquareConnect::CustomersApi.new
+            return api.retrieve_customer(remote_id)
+        rescue SquareConnect::ApiError => e
+            raise "Error encountered while retreaving customer: #{e.message}"
+
+            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+            return false
+        end
+    end
 end

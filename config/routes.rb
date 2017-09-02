@@ -8,18 +8,23 @@ Rails.application.routes.draw do
 	# You can have the root of your site routed with "root"
 	root 'root#js'
 
-    post '/login' => 'session#create'
+    post '/user/login'               => 'session#create'
+    post '/user/logout'              => 'session#destroy'
 
-    post '/logout' => 'session#destroy'
+    post '/user/signup'        => 'users#new'
+    post '/user/info'          => 'users#get_account_info'
+    post '/user/signup_remote' => 'users#new_remote'
 
-	post '/signup' => 'users#new'
-	post '/signup_remote' => 'users#new_remote'
+    post '/user/update_remote'       => 'users#update_remote'
 
-	post '/card/new' => 'cards#new'
+    post '/card/new'            => 'cards#new'
+    post '/card/delete'         => 'cards#delete'
 
-	post '/card/charge' => 'charges#charge_card_saved'
+    post '/cards'               => 'cards#get'
 
-	post '/charge' => 'charges#charge_card_web'
+	post '/card/charge'         => 'charges#charge_card_saved'
+
+	post '/charge'              => 'charges#charge_card_web'
 
 	# Example of regular route:
 	#   get 'products/:id' => 'catalog#view'

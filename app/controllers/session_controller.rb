@@ -5,10 +5,6 @@ class SessionController < ApplicationController
 	end
 
     def create
-        puts "ok1"
-        puts request.headers.inspect
-        puts "ak1"
-
 		user = User.find_by_email(params[:session][:email])
 		# If the user exists AND the password entered is correct.
 		if user && user.authenticate(params[:session][:password])
@@ -20,10 +16,6 @@ class SessionController < ApplicationController
                 token:              user.auth_token,
                 remoteAuthorized:   user.remote_id != nil
             }}
-
-            puts @current_user
-            puts session[:user_id]
-            @current_user
 		else
 			# If user's login doesn't work, send them back to the login form.
 			render :json => {:error => "login or password are incorrect"}, :status => 404

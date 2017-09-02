@@ -191,69 +191,11 @@
       paymentForm.requestCardNonce();
       return false;
     }
-    var chargeCardWithNonce = function(nonce) {
-      var product_id =  '001';//document.getElementById('product_id').value;
-      var name =  'test_name';//document.getElementById('name').value;
-      var email =  'test_email';//document.getElementById('email').value;
-      var street_address_1 =  'test';//document.getElementById('street_address_1').value;
-      var street_address_2 =  'test';//document.getElementById('street_address_2').value;
-      var city =  'test';//document.getElementById('city').value;
-      var state =  'test';//document.getElementById('state').value;
-      var zip =  'test';//document.getElementById('zip').value;
-
-      var http = new XMLHttpRequest();
-      var url = "/charges/charge_card";
-      var params = "product_id=" + product_id
-      +"&name=" + name
-      +"&email=" + email
-      + "&nonce=" + nonce
-      + "&street_address_1=" + street_address_1
-      + "&street_address_2=" + street_address_2
-      + "&city=" + city
-      + "&state=" + state
-      + "&zip=" + zip;
-
-      http.open("POST", url, true);
-
-      //Send the proper header information along with the request
-      http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-      http.setRequestHeader("X-CSRF-Token", "<%= form_authenticity_token %>");
-
-      http.onreadystatechange = function() {//Call a function when the state changes.
-          if(http.readyState == 4 && http.status == 200) {
-            var data = JSON.parse(http.responseText)
-            if (data.status == 200) {
-              window.postMessage(JSON.stringify({
-                success: {
-                  data: data
-                }
-              }));
-              document.getElementById("successNotification").style.display = "block";
-              document.getElementById("payment-form").style.display = "none";
-              window.scrollTo(0, 0);
-            }else if (data.status == 400){
-              var error_html = "";
-              window.postMessage(JSON.stringify({
-                error: {
-                  data: data
-                }
-              }));
-              for (var i =0; i < data.errors.length; i++){
-                error_html += "<li> " + data.errors[i].detail + " </li>";
-              }
-              document.getElementById("card-errors").innerHTML = error_html;
-              document.getElementById('submit').disabled = false;
-            }
-          }
-      }
-      http.send(params);
-    }
 
 	document.addEventListener('message', function(event){
 		console.log(event.data);
-
 		scrollTo(0,0);
-		paymentFormSubmit();
+		paymentFormSubmit(event.data);
 	});
 
 </script>
