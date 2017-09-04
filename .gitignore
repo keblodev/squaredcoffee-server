@@ -8,11 +8,11 @@
 /.bundle
 
 # Ignore the default SQLite database.
-server/db/test
-server/db/development
-server/db/production
+db/test
+db/development
+db/production
 
-server/db/*.sqlite3-journal
+db/*.sqlite3-journal
 
 # Ignore all logfiles and tempfiles.
 /log/*

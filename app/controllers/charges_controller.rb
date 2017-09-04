@@ -63,6 +63,8 @@ class ChargesController < ApplicationController
 		# Monetary amounts are specified in the smallest unit of the applicable currency.
 		# This amount is in cents. It's also hard-coded for $1, which is not very useful.
 
+        # TODO: amount from params + currency conversion
+
 		amount_money = { :amount => 101, :currency => 'USD' }
 
 		user = get_user(params[:token])
@@ -90,7 +92,7 @@ class ChargesController < ApplicationController
 
 		puts transaction_response
 
-		render json: {:status => 200, :resp => transaction_response}
+		render json: {:status => 200, :data => transaction_response}
 	end
 
 	def charge_card_web
@@ -139,7 +141,7 @@ class ChargesController < ApplicationController
 		# send receipt email to user
 		# ReceiptMailer.charge_email(params[:email],data).deliver_now if Rails.env == "development"
 
-		render json: {:status => 200, :resp => transaction_response}
+		render json: {:status => 200, :data => transaction_response}
     end
 
 	def get_user(user_auth_token)

@@ -45,21 +45,33 @@ class UsersController < ApplicationController
 			return
 		end
 
-		customer_res = customer_response.customer
+		user_remote = customer_response.customer
 
 
 		user = User.update(
             session[:user_id],
 			# TODO: token class
-			remote_id: customer_res.id
+			remote_id: user_remote.id
 		)
 
 		if user.save
 			session[:user_id] = user.id
 
             render json: {:status => 200, :data => {
-                token: user.auth_token,
-                remoteAuthorized: true
+                auth: {
+                    token: user.auth_token,
+                    remoteAuthorized: true,
+                },
+                billing:        {
+                    given_name:     user_remote.given_name,
+                    family_name:    user_remote.family_name,
+                    email_address:  user_remote.email_address,
+                    address:        user_remote.address,
+                    phone_number:   user_remote.phone_number,
+                },
+                userAccount: {
+                    email:      user.email
+                }
             }}
 		else
             render :json => {:error => '[user|new_remote]: too bad'}, :status => 500
@@ -98,7 +110,15 @@ class UsersController < ApplicationController
 
     def get_account_info
         user = get_user(params[:token])
-        user_remote = get_remote_user(user.remote_id).customer
+
+        customer_id = user.remote_id
+        # TODO: remove jsut local if no remote
+        if customer_id == nil
+            render json: {:status => 200}
+            return
+        end
+
+        user_remote = get_remote_user(customer_id).customer
 
         puts user
         puts user_remote
