@@ -73,6 +73,12 @@ class CardsController < ApplicationController
         customer_card_id = params[:remote_card_id]
         customer_id = user[:remote_id]
 
+        # TODO: remove jsut local if no remote
+        if customer_id == nil
+            render json: {:status => 200}
+            return
+        end
+
         begin
             api = SquareConnect::CustomersApi.new
             api.delete_customer_card(customer_id, customer_card_id)
@@ -92,6 +98,11 @@ class CardsController < ApplicationController
 		user = get_user(params[:token])
 
         customer_id = user[:remote_id]
+
+        if customer_id == nil
+            render json: {:status => 200, :data => []}
+            return
+        end
 
         remote_user = get_remote_user(customer_id)
 
