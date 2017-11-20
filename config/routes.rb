@@ -24,7 +24,13 @@ Rails.application.routes.draw do
 
 	post '/card/charge'         => 'charges#charge_card_saved'
 
-	post '/charge'              => 'charges#charge_card_web'
+    post '/charge'              => 'charges#charge_card_web'
+
+    # namespace :api do
+    #     match "/api/:controller(/:action(/*params))", via: [:get, :post]
+    # end
+
+    get '/auth/clover'     => 'clover/auth/auth_clover#authorize'
 
 	# Example of regular route:
 	#   get 'products/:id' => 'catalog#view'

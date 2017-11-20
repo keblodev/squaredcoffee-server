@@ -1,0 +1,23 @@
+{
+  "name": "squaredcoffee-server",
+  "version": "1.0.0",
+  "description": "clovered server",
+  "main": "none",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "start": "bundle exec rails s -b 0.0.0.0",
+    "drop" : "rake db:drop db:reset db:create db:migrate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ronanamsterdam/squaredcoffee-server.git"
+  },
+  "author": "Roman Zhyliov",
+  "license": "BSD 3-Clause",
+  "bugs": {
+    "url": "https://github.com/ronanamsterdam/squaredcoffee-server/issues"
+  },
+  "homepage": "https://github.com/ronanamsterdam/squaredcoffee-server#readme"
+}
