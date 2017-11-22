@@ -11,7 +11,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20171119124105) do
+ActiveRecord::Schema.define(version: 20171206141235) do
+
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
 
   create_table "cards", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -20,7 +23,7 @@ ActiveRecord::Schema.define(version: 20171119124105) do
     t.string   "remote_id"
   end
 
-  add_index "cards", ["user_id"], name: "index_cards_on_user_id"
+  add_index "cards", ["user_id"], name: "index_cards_on_user_id", using: :btree
 
   create_table "shops", force: :cascade do |t|
     t.string   "remote_id"
@@ -28,17 +31,21 @@ ActiveRecord::Schema.define(version: 20171119124105) do
     t.string   "name"
     t.text     "desc"
     t.string   "token"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at",    null: false
+    t.datetime "updated_at",    null: false
+    t.string   "address"
+    t.string   "opening_hours"
   end
 
   create_table "users", force: :cascade do |t|
-    t.datetime "created_at",      null: false
-    t.datetime "updated_at",      null: false
+    t.datetime "created_at",                           null: false
+    t.datetime "updated_at",                           null: false
     t.string   "auth_token"
     t.string   "remote_id"
     t.string   "email"
     t.string   "password_digest"
+    t.string   "orders",          default: "--- []\n"
+    t.boolean  "is_verified",     default: false
   end
 
 end

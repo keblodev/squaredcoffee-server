@@ -1,12 +1,9 @@
 Rails.application.routes.draw do
 
+    # SQUAREUP
+
 	get 'root/index'
-
-	# The priority is based upon order of creation: first created -> highest priority.
-	# See how all your routes lay out with "rake routes".
-
-	# You can have the root of your site routed with "root"
-	root 'root#js'
+    root 'root#js'
 
     post '/user/login'               => 'session#create'
     post '/user/logout'              => 'session#destroy'
@@ -26,58 +23,38 @@ Rails.application.routes.draw do
 
     post '/charge'              => 'charges#charge_card_web'
 
-    # namespace :api do
-    #     match "/api/:controller(/:action(/*params))", via: [:get, :post]
-    # end
+    # CLOVER
 
     get '/auth/clover'     => 'clover/auth/auth_clover#authorize'
+    get '/shops/clover'    => 'clover/merchant/merchants_clover#getAll'
 
-	# Example of regular route:
-	#   get 'products/:id' => 'catalog#view'
+    get '/shops/clover/:id'                 => 'clover/merchant/merchants_clover#get'
 
-	# Example of named route that can be invoked with purchase_url(id: product.id)
-	#   get 'products/:id/purchase' => 'catalog#purchase', as: :purchase
+    get '/shops/clover/:id/categories'      => 'clover/merchant/items_clover#get_all_categories_with_items'
+    get '/shops/clover/:id/items'           => 'clover/merchant/items_clover#get_all_with_modifies'
+    get '/shops/clover/:id/items/:itemId'   => 'clover/merchant/items_clover#get_with_modifiers'
 
-	# Example resource route (maps HTTP verbs to controller actions automatically):
-	#   resources :products
+    post '/shops/clover/:id/order/new'                   => 'clover/merchant/order_clover#new'
+    get '/shops/clover/:id/order/:order_id'              => 'clover/merchant/order_clover#get'
+    get '/shops/clover/order/:order_id/receipt'          => 'clover/merchant/order_clover#get_receipt'
+    post '/shops/clover/:id/order/:order_id/update'      => 'clover/merchant/order_clover#update'
+    post '/shops/clover/:id/order/:order_id/delete'      => 'clover/merchant/order_clover#delete'
 
-	# Example resource route with options:
-	#   resources :products do
-	#     member do
-	#       get 'short'
-	#       post 'toggle'
-	#     end
-	#
-	#     collection do
-	#       get 'sold'
-	#     end
-	#   end
+    get '/shops/clover/config/remote'   => 'clover/assets/images_clover#get_configs'
+    get '/shops/clover/images/:fileId'  => 'clover/assets/images_clover#get'
 
-	# Example resource route with sub-resources:
-	#   resources :products do
-	#     resources :comments, :sales
-	#     resource :seller
-	#   end
+    post '/user/shop/clover/orders' => 'clover/merchant/order_clover#get_user_orders'
 
-	# Example resource route with more complex sub-resources:
-	#   resources :products do
-	#     resources :comments
-	#     resources :sales do
-	#       get 'recent', on: :collection
-	#     end
-	#   end
+    post '/user/update/me'              => 'users#update_me'
+    post '/user/password/reset'         => 'users#password_reset'
+    post '/user/password/forgot'        => 'users#password_forgot'
+    get '/user/password/reset'          => 'auth#password_reset'
+    post '/user/password/reset_action'  => 'auth#password_reset_action'
+    get '/auth/email/validate'          => 'auth#validate_email'
+    get '/auth/email/invalidate'        => 'auth#invalidate_email'
 
-	# Example resource route with concerns:
-	#   concern :toggleable do
-	#     post 'toggle'
-	#   end
-	#   resources :posts, concerns: :toggleable
-	#   resources :photos, concerns: :toggleable
+    get '/user/passwprd/reset_tst' => 'auth#password_reset_tst'
 
-	# Example resource route within a namespace:
-	#   namespace :admin do
-	#     # Directs /admin/products/* to Admin::ProductsController
-	#     # (app/controllers/admin/products_controller.rb)
-	#     resources :products
-	#   end
+    # todo:
+    # post pay
 end

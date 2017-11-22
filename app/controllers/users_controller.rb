@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-	protect_from_forgery with: :null_session
+    protect_from_forgery with: :null_session
 
 	def initialize
 		@access_token = Rails.application.secrets.square_access_token
@@ -8,7 +8,7 @@ class UsersController < ApplicationController
 			# Configure OAuth2 access token for authorization: oauth2
 			config.access_token = @access_token
 		end
-	end
+    end
 
 	def new_remote
 		customer_api = SquareConnect::CustomersApi.new
@@ -48,14 +48,14 @@ class UsersController < ApplicationController
 		user_remote = customer_response.customer
 
 
-		user = User.update(
+        user = User.update(
             session[:user_id],
-			# TODO: token class
-			remote_id: user_remote.id
-		)
+            # TODO: token class
+            remote_id: user_remote.id
+        )
 
-		if user.save
-			session[:user_id] = user.id
+        if user.save
+            session[:user_id] = user.id
 
             render json: {:status => 200, :data => {
                 auth: {
@@ -79,26 +79,37 @@ class UsersController < ApplicationController
 	end
 
 	def new
-		puts params
-		user = User.new({
-			email: params[:email],
-			password: params[:password],
-			password_confirmation: params[:password_confirmation],
-			auth_token: SecureRandom.uuid
-		})
-		if user.save
-			session[:user_id] = user.id
-			render json: {:status => 200, :data => {token: user.auth_token}}
-		else
-			render :json => {:error => '[user|new]: too bad'}, :status => 500
-		end
-    end
 
-	def get_user(user_auth_token)
-		# TODO: do Token model
-		# exps and created fields
-		@user ||= User.find(session[:user_id]) if session[:user_id] else User.find_by_auth_token(user_auth_token)
-	end
+        email = params[:email]
+
+        unless User.exists?(email: email)
+            user = User.new({
+                email: params[:email],
+                password: params[:password],
+                # password_confirmation: params[:password_confirmation],
+                auth_token: SecureRandom.uuid
+            })
+
+            if user.save
+                session[:user_id] = user.id
+                # send email
+                verify_email_token = TokenHelper.sign_verify_email(user.email)
+                remove_email_token = TokenHelper.sign_remove_email(user.email)
+                Mailer.send_verify(
+                    user.email,
+                    request.headers['HTTP_HOST'],
+                    verify_email_token,
+                    remove_email_token
+                );
+
+                render json: {:status => 200, :data => {token: user.auth_token}}
+            else
+                render :json => {:message => '[user|new]: too bad'}, :status => 500
+            end
+        else
+            render :json => {:message => "email taken"}, :status => 400
+        end
+    end
 
     def update
         # todo
@@ -110,18 +121,24 @@ class UsersController < ApplicationController
 
     def get_account_info
         user = get_user(params[:token])
-
         customer_id = user.remote_id
         # TODO: remove jsut local if no remote
         if customer_id == nil
-            render json: {:status => 200}
+            render json: {:status => 200, :data => {
+                userAccount: {
+                    email:          user.email,
+                    is_verified:    user.is_verified
+                }
+            }}
             return
         end
-
+        binding.pry
         user_remote = get_remote_user(customer_id).customer
 
         puts user
         puts user_remote
+
+        binding.pry
 
         render json: {:status => 200, :data => {
             billing:        {
@@ -184,4 +201,68 @@ class UsersController < ApplicationController
 
         render json: {:status => 200}
     end
+
+    def update_me
+        email = params["config"]["email"]
+        token = params["auth"]["token"]
+        if email && token
+            user = get_user(token)
+
+            if email != user.email
+                user.email = email
+                user.is_verified = false
+                verify_email_token = TokenHelper.sign_verify_email(user.email)
+                Mailer.send_email_verify_for_exisiting_user(
+                    user.email,
+                    request.headers['HTTP_HOST'],
+                    verify_email_token
+                );
+            end
+
+            if user.save
+                render json: {:status => 200, :data => {ok: true}}
+            else
+                render :json => {:error => '[user|update_me]: too bad'}, :status => 500
+            end
+        else
+            render :json => {:error => 'Params are not sufficient'}, :status => 500
+        end
+    end
+
+    def password_reset
+        token   = params["auth"]["token"]
+        user    = get_user(token)
+
+        password_reset_token = TokenHelper.sign_reset_email(user.email)
+        Mailer.send_password_reset(
+            user.email,
+            request.headers['HTTP_HOST'],
+            password_reset_token
+        );
+
+        render json: {:status => 200, :data => {ok: true}}
+    end
+
+    def password_forgot
+        email   = params["email"]
+        user    = User.find_by_auth_email(user_auth_email) or not_found
+
+        password_reset_token = TokenHelper.sign_reset_email(user.email)
+        Mailer.send_password_reset(
+            user.email,
+            request.headers['HTTP_HOST'],
+            password_reset_token
+        );
+
+        render json: {:status => 200, :data => {ok: true}}
+    end
+
+	def get_user(user_auth_token)
+		User.find_by_auth_token(user_auth_token) or not_found
+	end
+
+    def not_found
+        raise ActionController::RoutingError.new('Not Found')
+    end
+
 end

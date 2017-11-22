@@ -3,10 +3,6 @@ require 'json'
 
 class Clover::Auth::AuthCloverController < ApplicationController
 
-    def initialize
-
-    end
-
     def authorize
         code        = params[:code];
         shop_id     = params[:merchant_id];
@@ -34,10 +30,12 @@ class Clover::Auth::AuthCloverController < ApplicationController
         	puts "Getting auth token for shop_id: #{shop_id}"
             merchant_request = HTTP
             .headers(:authorization => "Bearer #{access_token}")
-            .get("#{clover_base_api_url}/v3/merchants/#{shop_id}")
+            .get("#{clover_base_api_url}/v3/merchants/#{shop_id}?expand=address,openingHours")
             merchant_resp = merchant_request.parse
 
-            name = merchant_resp["name"]
+            name            = merchant_resp["name"]
+            address         = merchant_resp["address"]
+            opening_hours   = merchant_resp["opening_hours"]
 
         rescue HTTP::ResponseError => e
             raise "Error encountered while getting access token: #{e.message}"
@@ -50,9 +48,11 @@ class Clover::Auth::AuthCloverController < ApplicationController
             remote_id: params[:merchant_id]
         )
 
-        shop.vendor_id  = clover_vendor_id
-        shop.name       = name
-        shop.token      = access_token
+        shop.vendor_id      = clover_vendor_id
+        shop.name           = name
+        shop.address        = address.to_json
+        shop.opening_hours  = opening_hours['elements'].first.to_json
+        shop.token          = access_token
 
         if shop.save
             render json: {:status => 200, :data => {token: shop.token}}
