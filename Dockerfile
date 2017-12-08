@@ -3,8 +3,8 @@ MAINTAINER Roman Z <imakegreat.com@gmail.com>
 
 RUN apk --update add --virtual build-dependencies \
                                 # bundler \
-                                build-essential \
-                                libpq-dev \
+                                alpine-sdk \
+                                postgresql-dev \
                                 libcurl \
                                 curl \
                                 build-base \
