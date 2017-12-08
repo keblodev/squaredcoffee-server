@@ -3,6 +3,8 @@ MAINTAINER Roman Z <imakegreat.com@gmail.com>
 
 RUN apk --update add --virtual build-dependencies \
                                 # bundler \
+                                build-essential \
+                                libpq-dev \
                                 libcurl \
                                 curl \
                                 build-base \
@@ -13,8 +15,6 @@ RUN apk --update add --virtual build-dependencies \
                                 nodejs \
                                 tzdata \
                                 && rm -rf /var/cache/apl/*
-
-RUN apt-get update -qq && apt-get install -y build-essential libpq-dev
 
 RUN bundle config build.nokogiri --use-system-libraries
 
