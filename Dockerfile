@@ -3,8 +3,7 @@ MAINTAINER Roman Z <imakegreat.com@gmail.com>
 
 RUN apk --update add --virtual build-dependencies \
                                 # bundler \
-                                alpine-sdk \
-                                postgresql-dev \
+                                libpq-dev \
                                 libcurl \
                                 curl \
                                 build-base \
@@ -15,6 +14,8 @@ RUN apk --update add --virtual build-dependencies \
                                 nodejs \
                                 tzdata \
                                 && rm -rf /var/cache/apl/*
+
+RUN apk update && apk add postgresql-dev libffi-dev
 
 RUN bundle config build.nokogiri --use-system-libraries
 
