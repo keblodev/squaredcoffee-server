@@ -22,6 +22,8 @@ class Clover::Merchant::MerchantsCloverController < ApplicationController
 
         if shop
             render json: {:status => 200, :data => {shops: shop}}
+        else
+            render json: {:status => 404, :data => {ok: false}}
         end
     end
 

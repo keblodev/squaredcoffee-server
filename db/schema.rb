@@ -38,14 +38,15 @@ ActiveRecord::Schema.define(version: 20171206141235) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.datetime "created_at",                           null: false
-    t.datetime "updated_at",                           null: false
+    t.datetime "created_at",                      null: false
+    t.datetime "updated_at",                      null: false
     t.string   "auth_token"
     t.string   "remote_id"
     t.string   "email"
     t.string   "password_digest"
-    t.string   "orders",          default: "--- []\n"
+    t.string   "orders",          default: [],                 array: true
     t.boolean  "is_verified",     default: false
   end
 
+  add_foreign_key "cards", "users"
 end
