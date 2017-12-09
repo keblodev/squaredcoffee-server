@@ -27,6 +27,6 @@ RUN gem update bundler
 RUN bundle install
 RUN bundle exec rake RAILS_ENV=production DATABASE_URL=postgresql://user:pass@127.0.0.1/dbname SECRET_TOKEN=pickasecuretoken assets:precompile
 # RUN bundle exec rake db:create db:migrate
-CMD bundle exec foreman start
+CMD npm run start_prod
 
 EXPOSE 3000
