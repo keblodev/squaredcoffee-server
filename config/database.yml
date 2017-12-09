@@ -10,13 +10,13 @@ default: &default
   timeout: 5000
 
 development: &development
+  <<: *default
+  database: development
   adapter:  postgresql
   encoding: unicode
   host:     localhost
   username: postgres
   password: 123456
-  pool: 5
-  timeout: 5000
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -27,8 +27,8 @@ test:
 
 production:
   <<: *development
-  host:   54.254.179.197
-  port:   80
-  username: postgres_user
-  password: postgres_password
-  database: production
+  host:   <%= ENV['CLOVER_PROD_DB_HOST'] %>
+  port:   <%= ENV['CLOVER_PROD_DB_PORT'] %>
+  username: <%= ENV['PG_PROD_USER'] %>
+  password: <%= ENV['PG_PROD_PWD'] %>
+  database: <%= ENV['PG_PROD_DB'] %>
