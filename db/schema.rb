@@ -48,5 +48,4 @@ ActiveRecord::Schema.define(version: 20171206141235) do
     t.boolean  "is_verified",     default: false
   end
 
-  add_foreign_key "cards", "users"
 end

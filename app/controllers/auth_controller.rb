@@ -51,6 +51,29 @@ class AuthController < ApplicationController
         end
     end
 
+    def validate_email
+        if token = params[:token]
+            begin
+                decoded = TokenHelper.verify_email_token(token, Rails.application.secrets["tokens"]["verify_email_token"])
+            rescue HTTP::ResponseError => e
+                raise "Error on get_item: #{e.message}"
+
+                render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                return
+            end
+
+            if user = User.find_by_email(decoded.first["email"])
+                user.is_verified = true
+                user.save
+            else
+                render :file => "#{Rails.root}/public/404.html",  :status => 404
+            end
+            render :file => "#{Rails.root}/public/200.html",  :status => 200
+        else
+            render :file => "#{Rails.root}/public/422.html",  :status => 422
+        end
+    end
+
     def invalidate_email
         if token = params[:token]
             begin

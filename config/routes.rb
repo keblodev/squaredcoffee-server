@@ -25,8 +25,9 @@ Rails.application.routes.draw do
 
     # CLOVER
 
-    get '/auth/clover'     => 'clover/auth/auth_clover#authorize'
-    get '/shops/clover'    => 'clover/merchant/merchants_clover#getAll'
+    get '/auth/clover'          => 'clover/auth/auth_clover#authorize'
+    get '/shops/clover'         => 'clover/merchant/merchants_clover#getAll'
+    get '/shops/clover/refetch' => 'clover/merchant/merchants_clover#refetchAll'
 
     get '/shops/clover/:id'                 => 'clover/merchant/merchants_clover#get'
 
@@ -50,6 +51,7 @@ Rails.application.routes.draw do
     post '/user/password/forgot'        => 'users#password_forgot'
     get '/user/password/reset'          => 'auth#password_reset'
     post '/user/password/reset_action'  => 'auth#password_reset_action'
+    post '/user/email/validate/resend'  => 'users#validate_email_resend'
     get '/auth/email/validate'          => 'auth#validate_email'
     get '/auth/email/invalidate'        => 'auth#invalidate_email'
 

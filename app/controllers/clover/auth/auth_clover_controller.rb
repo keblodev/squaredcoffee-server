@@ -51,11 +51,12 @@ class Clover::Auth::AuthCloverController < ApplicationController
         shop.vendor_id      = clover_vendor_id
         shop.name           = name
         shop.address        = address.to_json
+        shop.desc           = address["address3"] || ''
         shop.opening_hours  = opening_hours['elements'].first.to_json
         shop.token          = access_token
 
         if shop.save
-            render json: {:status => 200, :data => {token: shop.token}}
+            render :file => "#{Rails.root}/public/200.html",  :status => 200
         else
             render :json => {:error => '[clover|authorize]: too bad'}, :status => 500
         end

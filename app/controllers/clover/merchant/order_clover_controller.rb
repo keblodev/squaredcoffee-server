@@ -46,11 +46,14 @@ class Clover::Merchant::OrderCloverController < ApplicationController
             render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
             return
         end
-
         # 1.1 if auth -> add that to user
         if params[:auth] != nil && user = get_user(params[:auth]["token"])
             user.orders << "#{shop_id}|#{order_id}"
-            user.save
+            if !user.save
+                binding.pry
+                render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                return
+            end
             # 1.2 if remote auth -> add that to order
         end
 
@@ -124,7 +127,6 @@ class Clover::Merchant::OrderCloverController < ApplicationController
         total_tax = 0
 
         # 5. CALCULATE TOTAL AND UPDATE THAT FUCK
-
         order.each do |item|
             total_cost = total_cost + item["priceCalculated"];
             item_tax_rate = item["taxRates"]["elements"] || []

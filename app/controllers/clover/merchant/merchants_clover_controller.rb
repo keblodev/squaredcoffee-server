@@ -16,7 +16,6 @@ class Clover::Merchant::MerchantsCloverController < ApplicationController
     end
 
     def get
-        # {{url}}/v3/merchants/{{mId}}?access_token={{token}}
         shop = get_shop(params[:id])
 
         if shop
@@ -24,6 +23,54 @@ class Clover::Merchant::MerchantsCloverController < ApplicationController
         else
             render json: {:status => 404, :data => {ok: false}}
         end
+    end
+
+    def refetchAll
+
+        shops = Shop.all
+
+        clover_vendor_id            = Rails.application.secrets.clover_vendor_id
+
+        updated_shops = shops.map do |shop|
+                shop_id         = shop[:remote_id]
+                access_token    = shop[:token]
+                begin
+                    puts "Getting info for shop_id: #{shop_id}"
+                    merchant_request = HTTP
+                    .headers(:authorization => "Bearer #{access_token}")
+                    .get("#{@clover_base_api_url}/v3/merchants/#{shop_id}?expand=address,openingHours")
+                    merchant_resp = merchant_request.parse
+                    name            = merchant_resp["name"]
+                    address         = merchant_resp["address"]
+                    opening_hours   = merchant_resp["opening_hours"]
+
+                rescue HTTP::ResponseError => e
+                    binding.pry
+                    raise "Error encountered while getting access token: #{e.message}"
+
+                    render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                    return
+                end
+
+                shop = Shop.find_or_create_by(
+                    remote_id: shop_id
+                )
+
+                shop.vendor_id      = clover_vendor_id
+                shop.name           = name
+                shop.address        = address.to_json
+                shop.desc           = address["address3"] || ''
+                shop.opening_hours  = opening_hours['elements'].first.to_json
+                shop.token          = access_token
+
+                unless shop.save
+                    render :json => {:error => '[clover|authorize]: too bad'}, :status => 500
+                else
+                    shop
+                end
+            end
+
+            render json: {:status => 200, :data => {shops: updated_shops}}
     end
 
     def get_shop(remote_id)

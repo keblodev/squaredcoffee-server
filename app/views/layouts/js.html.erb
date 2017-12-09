@@ -1,16 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-	<title>RailsPayment</title>
-	<%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
-	<%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=4.0, user-scalable=no" />
+	<title>A page on the internet</title>
 	<%= csrf_meta_tags %>
-	<script type="text/javascript" src="https://js.squareup.com/v2/paymentform"></script>
 </head>
 <body>
+    <div
+        style="
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #909090;
+            font-family: 'Helvetica', arial;
+            text-align: center;
+            -webkit-font-smoothing: antialiased;
+            flex-direction: column;
+        "
+    >
+        <h1>Congratulate your self!</h1>
+        <h1>You have found... a page!</h1>
+        <h1>On the Internet!</h1>
+        <p>Tell your friends about and don't foget to:</p>
+        <p>1. Like</p>
+        <p>2. Share</p>
+        <p>3. and Subscribe</p>
 
-<%= yield %>
+    </div>
 
 </body>
 </html>

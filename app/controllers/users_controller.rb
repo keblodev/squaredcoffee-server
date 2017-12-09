@@ -272,6 +272,20 @@ class UsersController < ApplicationController
         end
     end
 
+    def validate_email_resend
+        token   = params["auth"]["token"]
+        user    = get_user(token)
+
+        verify_email_token = TokenHelper.sign_verify_email(user.email)
+        Mailer.send_email_verify_for_exisiting_user(
+            user.email,
+            request.protocol + request.headers['HTTP_HOST'],
+            verify_email_token
+        );
+
+        render json: {:status => 200, :data => {ok: true}}
+    end
+
 	def get_user(user_auth_token)
 		User.find_by_auth_token(user_auth_token) or not_found
 	end
