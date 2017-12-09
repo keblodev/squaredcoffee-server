@@ -12,7 +12,6 @@ class Clover::Merchant::CustomerCloverController < ApplicationController
     end
 
     def get_all_with_modifiers
-        # binding.pry
 
         shop = get_shop(params[:id])
 

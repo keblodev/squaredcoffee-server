@@ -13,7 +13,6 @@ class AwsMailer
     def self.make_email_payload(params)
         body = {}
         to_addresses = params[:receiver].is_a?(Array) ? params[:receiver] : [params[:receiver]]
-
         if params[:body_html] != nil
             body[:html] = make_email_sub_payload(params[:body_html])
         end

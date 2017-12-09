@@ -5,7 +5,6 @@ class AuthController < ApplicationController
     end
 
     def password_reset_action
-        binding.pry
         if token = params[:token]
             begin
                 decoded = TokenHelper.verify_email_token(token, Rails.application.secrets["tokens"]["reset_password_token"])
@@ -17,16 +16,14 @@ class AuthController < ApplicationController
             end
 
             if user = User.find_by_email(decoded.first["email"])
-                user.password = params[:password]
+                user.password   = params[:password]
+                user.auth_token = SecureRandom.uuid
                 user.save
             else
-                binding.pry
                 render :file => "#{Rails.root}/public/404.html",  :status => 404
             end
-            binding.pry
             render :file => "#{Rails.root}/public/200.html",  :status => 200
         else
-            binding.pry
             render :file => "#{Rails.root}/public/422.html",  :status => 422
         end
     end
@@ -55,7 +52,6 @@ class AuthController < ApplicationController
     end
 
     def invalidate_email
-        binding.pry
         if token = params[:token]
             begin
                 decoded = TokenHelper.verify_email_token(token, Rails.application.secrets["tokens"]["remove_email_token"])
@@ -70,7 +66,6 @@ class AuthController < ApplicationController
                 if user.is_verified
                     render :file => "#{Rails.root}/public/404.html",  :status => 404
                 else
-                    binding.pry
                     user.destroy
                 end
             else

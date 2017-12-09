@@ -10,7 +10,6 @@ class Clover::Merchant::MerchantsCloverController < ApplicationController
     end
 
     def getAll
-        # binding.pry
         shops = Shop.all
         # TODO: check with allowed stores config(?)
         render json: {:status => 200, :data => {shops: shops}}

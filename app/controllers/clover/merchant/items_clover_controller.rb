@@ -34,7 +34,6 @@ class Clover::Merchant::ItemsCloverController < ApplicationController
     end
 
     def get_all_with_modifies
-        # binding.pry
 
         shop = get_shop(params[:id])
 
