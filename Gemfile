@@ -8,7 +8,7 @@ gem 'rails', '4.2.6'
 gem 'sqlite3'
 gem 'pg', '~> 0.18'
 
-gem 'aws-sdk', '~> 3'
+gem 'aws-sdk-ses', '~> 1.5.0'
 
 gem 'jwt'
 gem 'promise.rb'
