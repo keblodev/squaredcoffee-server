@@ -3,12 +3,12 @@ source 'https://rubygems.org'
 ruby "2.3.1"
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '4.2.6'
+gem 'rails', '4.2.7.1'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3'
 gem 'pg', '~> 0.18'
 
-gem 'aws-sdk', '~> 3'
+gem 'aws-sdk-ses', '~> 1.5.0'
 
 gem 'jwt'
 gem 'promise.rb'

@@ -22,6 +22,7 @@ tmp/
 Gemfile.lock
 android/app/build/
 
+public/assets
 .env
 .gradle/
 .idea/
