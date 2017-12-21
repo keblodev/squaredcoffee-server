@@ -135,7 +135,7 @@ class Clover::Merchant::OrderCloverController < ApplicationController
         end
 
         begin
-            puts "Updating order #{order_id} with total: #{total_cost+total_tax}"
+            puts "Updating order #{order_id} with total: #{(total_cost+total_tax).round}"
             new_order_lineitems_request = HTTP
             .headers(
                 :authorization => "Bearer #{access_token}",
@@ -144,7 +144,7 @@ class Clover::Merchant::OrderCloverController < ApplicationController
             .post(
                 "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}",
                 :json => {
-                    "total": (total_cost + total_tax)
+                    "total": (total_cost + total_tax).round
                 }
             )
             lineitems_resp = new_order_lineitems_request.parse
@@ -188,11 +188,78 @@ class Clover::Merchant::OrderCloverController < ApplicationController
     end
 
     # 2.update it with items
-    def update
+    def cancel
+
+        order_id        = params["order_id"]
+        merchant_id     = params[:merchant_id] # sandbox Test Merchant
+
+        shop            = get_shop(params[:merchant_id])
+        shop_id         = shop.remote_id
+        access_token    = shop.token
+
+        cancelled_order_resp = {}
+
+        if user = get_user(params[:auth]["token"])
+            user.orders.map do |orderSet|
+                orderSetArr = orderSet.split("|")
+                set_shop_id = orderSetArr.first
+                set_order_id    = orderSetArr.last
+
+                if set_shop_id == shop_id && set_order_id == order_id
+
+                    begin
+                        puts "Cancelling order #{order_id}"
+                        cancel_order_req = HTTP
+                        .headers(
+                            :authorization => "Bearer #{access_token}",
+                            :content_type => "application/json",
+                        )
+                        .post(
+                            "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}",
+                            :json => {
+                                "state": "cancelled"
+                            }
+                        )
+                        cancelled_order_resp = cancel_order_req.parse
+                    rescue HTTP::ResponseError => e
+                        raise "Error on new updateing order with cost: #{e.message}"
+
+                        render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                        return
+                    end
+                end
+            end
+
+            render json: {:status => 200, :data => {order: cancelled_order_resp}}
+        end
     end
 
     # 3.delete
-    def delete
+    def remove
+        order_id        = params["order_id"]
+        merchant_id     = params["merchant_id"] # sandbox Test Merchant
+
+        shop            = get_shop(params["merchant_id"])
+        shop_id         = shop.remote_id
+        access_token    = shop.token
+
+        if user = get_user(params[:auth]["token"])
+            user.orders = user.orders.reject do |orderSet|
+                orderSetArr = orderSet.split("|")
+                set_shop_id = orderSetArr.first
+                set_order_id    = orderSetArr.last
+
+                set_shop_id == shop_id && set_order_id == order_id
+            end
+
+            if !user.save
+                binding.pry
+                render :json => {:error => '[orders|delete]: too bad'}, :status => 500
+                return
+            end
+
+            render json: {:status => 200, :data => {orders: user.orders}}
+        end
     end
 
     def get_remote_order(access_token, shop_id, order_id)
@@ -203,7 +270,7 @@ class Clover::Merchant::OrderCloverController < ApplicationController
                 :authorization => "Bearer #{access_token}"
             )
             .get(
-                "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}?expand=lineItems.modifications,lineItems.taxRates"
+                "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}?expand=lineItems.modifications,lineItems.taxRates,payments"
             )
 
             new_order_lineitems_request.parse
@@ -240,7 +307,7 @@ class Clover::Merchant::OrderCloverController < ApplicationController
                     :authorization => "Bearer #{shop["token"]}"
                 )
                 .get(
-                    "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}?expand=lineItems.modifications,lineItems.taxRates"
+                    "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}?expand=lineItems.modifications,lineItems.taxRates,payments"
                 )
                 order_resp = order_req.parse
                 orders << order_resp

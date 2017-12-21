@@ -41,6 +41,10 @@ Rails.application.routes.draw do
     post '/shops/clover/:id/order/:order_id/update'      => 'clover/merchant/order_clover#update'
     post '/shops/clover/:id/order/:order_id/delete'      => 'clover/merchant/order_clover#delete'
 
+    post '/shops/clover/:merchant_id/order/:order_id/pay' => 'clover/merchant/pay_clover#pay'
+    post '/shops/clover/:merchant_id/order/:order_id/cancel' => 'clover/merchant/order_clover#cancel'
+    post '/shops/clover/:merchant_id/order/:order_id/remove' => 'clover/merchant/order_clover#remove'
+
     get '/shops/clover/config/remote'   => 'clover/assets/images_clover#get_configs'
     get '/shops/clover/images/:fileId'  => 'clover/assets/images_clover#get'
 
@@ -56,7 +60,4 @@ Rails.application.routes.draw do
     get '/auth/email/invalidate'        => 'auth#invalidate_email'
 
     get '/user/passwprd/reset_tst' => 'auth#password_reset_tst'
-
-    # todo:
-    # post pay
 end
