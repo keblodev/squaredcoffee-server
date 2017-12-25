@@ -96,7 +96,7 @@ class Clover::Merchant::PayCloverController < ApplicationController
                     "#{pay_api_url}/#{merchant_id}/pay",
                     :json => post_data
                 )
-            pay_resp = pay_order_request.body.to_s
+            pay_resp = pay_order_request.parse
         rescue HTTP::ResponseError => e
             raise "Error on new order: #{e.message}"
 
@@ -104,7 +104,11 @@ class Clover::Merchant::PayCloverController < ApplicationController
             return
         end
 
-        render json: {:status => 200, :data => {resp: pay_resp}}
+        if pay_resp["result"] == "APPROVED"
+            render json: {:status => 200, :data => {resp: pay_resp}}
+        else
+            render :json => {:message => "payment failed"}, :status => 400
+        end
     end
 
 	def get_user(user_auth_token)
