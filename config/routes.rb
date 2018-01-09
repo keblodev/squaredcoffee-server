@@ -5,6 +5,7 @@ Rails.application.routes.draw do
 	get 'root/index'
     root 'root#js'
     get  '/privacy' => 'privacy_policy#index'
+    get  '/eula'    => 'eula#index'
 
     post '/user/login'               => 'session#create'
     post '/user/logout'              => 'session#destroy'
