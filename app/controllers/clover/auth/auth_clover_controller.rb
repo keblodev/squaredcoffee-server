@@ -16,7 +16,7 @@ class Clover::Auth::AuthCloverController < ApplicationController
 
         begin
             puts "Getting auth token for shop_id: #{shop_id}"
-            request = HTTP.get("#{clover_base_url}/oauth/token?client_id=#{clover_application_id}&client_secret=#{clover_application_secret}&code=#{code}")
+            request = HTTP.get("#{clover_base_api_url}/oauth/token?client_id=#{clover_application_id}&client_secret=#{clover_application_secret}&code=#{code}")
             resp = request.parse
             access_token = resp["access_token"]
         rescue HTTP::ResponseError => e
