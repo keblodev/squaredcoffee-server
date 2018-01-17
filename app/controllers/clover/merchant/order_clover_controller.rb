@@ -50,7 +50,6 @@ class Clover::Merchant::OrderCloverController < ApplicationController
         if params[:auth] != nil && user = get_user(params[:auth]["token"])
             user.orders << "#{shop_id}|#{order_id}"
             if !user.save
-                binding.pry
                 render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
                 return
             end
@@ -168,7 +167,7 @@ class Clover::Merchant::OrderCloverController < ApplicationController
             puts "Getting receipt for #{order_id}"
             new_order_lineitems_request = HTTP
             .get(
-                "#{@clover_base_api_url}/r/#{order_id}"
+                "#{@clover_base_url}/r/#{order_id}"
             )
         rescue HTTP::ResponseError => e
             raise "Error on getting receipt: #{e.message}"
@@ -179,8 +178,8 @@ class Clover::Merchant::OrderCloverController < ApplicationController
 
         stringed = new_order_lineitems_request.to_s
 
-        stringed.gsub! 'href="/assets', "href=\"#{@clover_base_api_url}/assets"
-        stringed.gsub! 'src="/assets', "src=\"#{@clover_base_api_url}/assets"
+        stringed.gsub! 'href="/assets', "href=\"#{@clover_base_url}/assets"
+        stringed.gsub! 'src="/assets', "src=\"#{@clover_base_url}/assets"
 
         stringed.gsub! /<script[\s\S]*?>[\s\S]*?<\/script>/, ''
 
@@ -253,7 +252,6 @@ class Clover::Merchant::OrderCloverController < ApplicationController
             end
 
             if !user.save
-                binding.pry
                 render :json => {:error => '[orders|delete]: too bad'}, :status => 500
                 return
             end
@@ -288,6 +286,8 @@ class Clover::Merchant::OrderCloverController < ApplicationController
         shopsDic = {}
         orders = []
 
+        rejected_orders = []
+
         user.orders.each do |orderSet|
             orderSetArr = orderSet.split("|")
             shop_id     = orderSetArr.first
@@ -310,11 +310,43 @@ class Clover::Merchant::OrderCloverController < ApplicationController
                     "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}?expand=lineItems.modifications,lineItems.taxRates,payments"
                 )
                 order_resp = order_req.parse
-                orders << order_resp
+                if order_resp["message"]
+                    if order_resp["message"] == "Not Found"
+                        rejected_orders << orderSet
+                    else
+                        orders << order_resp
+                    end
+                else
+                    orders << order_resp
+                end
             rescue HTTP::ResponseError => e
                 raise "Error on new modId for lineitem: #{e.message}"
 
-                render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                rejected_orders << orderSet
+                # delete order from user if there's an error
+                # render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                # return
+            end
+        end
+
+        if rejected_orders.count > 0
+            user.orders = user.orders.reject do |orderSet|
+                orderSetArr = orderSet.split("|")
+                set_shop_id = orderSetArr.first
+                set_order_id    = orderSetArr.last
+
+                is_rejected = false
+                rejected_orders.each do |rejectedSet|
+                    rejected_orderSetArr    = rejectedSet.split("|")
+                    rejected_set_shop_id    = rejected_orderSetArr.first
+                    rejected_set_order_id   = rejected_orderSetArr.last
+                    is_rejected = (set_shop_id == rejected_set_shop_id && set_order_id == rejected_set_order_id)
+                end
+                is_rejected
+            end
+
+            if !user.save
+                render :json => {:error => '[orders|delete]: too bad'}, :status => 500
                 return
             end
         end

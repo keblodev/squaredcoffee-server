@@ -45,7 +45,6 @@ class Clover::Merchant::MerchantsCloverController < ApplicationController
                     opening_hours   = merchant_resp["opening_hours"]
 
                 rescue HTTP::ResponseError => e
-                    binding.pry
                     raise "Error encountered while getting access token: #{e.message}"
 
                     render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
