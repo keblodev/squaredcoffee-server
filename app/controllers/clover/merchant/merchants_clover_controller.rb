@@ -31,45 +31,57 @@ class Clover::Merchant::MerchantsCloverController < ApplicationController
 
         clover_vendor_id            = Rails.application.secrets.clover_vendor_id
 
+        reset_app_state = false
+
         updated_shops = shops.map do |shop|
-                shop_id         = shop[:remote_id]
-                access_token    = shop[:token]
-                begin
-                    puts "Getting info for shop_id: #{shop_id}"
-                    merchant_request = HTTP
-                    .headers(:authorization => "Bearer #{access_token}")
-                    .get("#{@clover_base_api_url}/v3/merchants/#{shop_id}?expand=address,openingHours")
-                    merchant_resp = merchant_request.parse
+            shop_id         = shop[:remote_id]
+            access_token    = shop[:token]
+            begin
+                puts "Getting info for shop_id: #{shop_id}"
+                merchant_request = HTTP
+                .headers(:authorization => "Bearer #{access_token}")
+                .get("#{@clover_base_api_url}/v3/merchants/#{shop_id}?expand=address,openingHours")
+                merchant_resp = merchant_request.parse
+                if merchant_request.status == 401
+                    if rejected_shop = Shop.find_by_remote_id(shop.remote_id)
+                        reset_app_state = true
+                        Shop.delete(rejected_shop.id)
+                        break
+                    end
+                else
                     name            = merchant_resp["name"]
                     address         = merchant_resp["address"]
                     opening_hours   = merchant_resp["opening_hours"]
-
-                rescue HTTP::ResponseError => e
-                    raise "Error encountered while getting access token: #{e.message}"
-
-                    render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
-                    return
                 end
 
-                shop = Shop.find_or_create_by(
-                    remote_id: shop_id
-                )
+            rescue HTTP::ResponseError => e
+                raise "Error encountered while getting access token: #{e.message}"
 
-                shop.vendor_id      = clover_vendor_id
-                shop.name           = name
-                shop.address        = address.to_json
-                shop.desc           = address["address3"] || ''
-                shop.opening_hours  = opening_hours['elements'].first.to_json
-                shop.token          = access_token
-
-                unless shop.save
-                    render :json => {:error => '[clover|authorize]: too bad'}, :status => 500
-                else
-                    shop
-                end
+                render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                return
             end
 
-            render json: {:status => 200, :data => {shops: updated_shops}}
+            shop = Shop.find_or_create_by(
+                remote_id: shop_id
+            )
+
+            shop.vendor_id      = clover_vendor_id
+            shop.name           = name
+            shop.address        = address.to_json
+            shop.desc           = address["address3"] || ''
+            shop.opening_hours  = opening_hours['elements'].first.to_json
+            shop.token          = access_token
+
+            unless shop.save
+                render :json => {:error => '[clover|authorize]: too bad'}, :status => 500
+            else
+                shop
+            end
+        end
+
+        updated_shops = updated_shops || []
+
+        render json: {:status => 200, :data => {shops: updated_shops, reset_app_state: reset_app_state}}
     end
 
     def get_shop(remote_id)

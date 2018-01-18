@@ -11,8 +11,7 @@ class Clover::Merchant::ItemsCloverController < ApplicationController
 
     # 1.all in one call
     def get_all_categories_with_items
-        shop = get_shop(params[:id])
-
+        if shop = get_shop(params[:id])
         remote_id       = shop.remote_id
         access_token    = shop.token
 
@@ -31,6 +30,9 @@ class Clover::Merchant::ItemsCloverController < ApplicationController
         end
 
         render json: {:status => 200, :data => {data: categories, id: params[:id]}}
+        else
+            render :json => {:message => "shop not found"}, :status => 404
+        end
     end
 
     def get_all_with_modifies
@@ -81,13 +83,8 @@ class Clover::Merchant::ItemsCloverController < ApplicationController
     end
 
     def get_shop(remote_id)
-        Shop.find_by_remote_id(remote_id) or not_found
+        Shop.find_by_remote_id(remote_id)
     end
-
-    def not_found
-        raise ActionController::RoutingError.new('Not Found')
-    end
-
 end
 # get categories
 # get merchant
