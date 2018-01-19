@@ -14,150 +14,160 @@ class Clover::Merchant::OrderCloverController < ApplicationController
     # 1.create an order
     def new
 
-        shop = get_shop(params[:id])
-        shop_id         = shop.remote_id
-        access_token    = shop.token
+        if shop = get_shop(params[:id])
+            shop_id         = shop.remote_id
+            access_token    = shop.token
 
-        order = params["order"]
+            if is_rmote_shop_authorized(shop_id, access_token)
 
-        is_drive_through = params["isDriveThrough"]
+                order = params["order"]
 
-        # 1.create an order
-        begin
-            puts "Creating new order for shop_id: #{shop_id}"
-            new_order_request = HTTP
-            .headers(
-                :authorization => "Bearer #{access_token}",
-                :content_type => "application/json",
-            )
-            .post(
-                "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders",
-                :json => {
-                    "state":    "open",
-                    "note":     "MOB APP #{"| DRIVE THROUGH" if is_drive_through}",
-                    "title":    "Thanks for the remote order!"
-                }
-            )
-            order_resp = new_order_request.parse
-            order_id = order_resp["id"]
-        rescue HTTP::ResponseError => e
-            raise "Error on new order: #{e.message}"
+                is_drive_through = params["isDriveThrough"]
 
-            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
-            return
-        end
-        # 1.1 if auth -> add that to user
-        if params[:auth] != nil && user = get_user(params[:auth]["token"])
-            user.orders << "#{shop_id}|#{order_id}"
-            if !user.save
-                render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
-                return
-            end
-            # 1.2 if remote auth -> add that to order
-        end
+                # 1. check if shop still available
 
-        remote_user = user.remote_id if user !=nil
-
-        modifierIdsPerItem = order.reduce({}) do |acc, item|
-            selected_mods = item["selectedModifiers"] || []
-            acc[item["uuid"]] = selected_mods.map {|mod| mod["selectedModifier"]["id"]}
-            acc
-        end
-
-        # 2. update that shit with bulk items
-        begin
-            puts "Setting line items for shop_id: #{shop_id}"
-            new_order_lineitems_request = HTTP
-            .headers(
-                :authorization => "Bearer #{access_token}",
-                :content_type => "application/json",
-            )
-            .post(
-                "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}/bulk_line_items",
-                :json => {
-                    "items": order.map do |item|
-                        item[:alternateName] = item["uuid"] #!!!
-                        item[:note] = "through mob app"
-                        item[:userDate] = "for #{user.email}" if user != nil
-                        item
-                    end
-                }
-            )
-            lineitems_resp = new_order_lineitems_request.parse
-        rescue HTTP::ResponseError => e
-            raise "Error on new lineitems order: #{e.message}"
-
-            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
-            return
-        end
-
-        # 3. update EVERY item with modifiers
-        lineitems_resp.each do |lineitem|
-            lineitem_id = lineitem["id"]
-            modifiers_to_add = modifierIdsPerItem[lineitem["alternateName"]] || []
-            # 3.1 ADD EVERY FUCKING MOD SEPARATELY TO EVERY FREAKING ITEM???
-            modifiers_to_add.each do |modId|
+                # 1.create an order
                 begin
-                    puts "Setting modifier #{modId} for lineitem: #{lineitem_id}"
-                    new_mod_lineitems_request = HTTP
+                    puts "Creating new order for shop_id: #{shop_id}"
+                    new_order_request = HTTP
                     .headers(
                         :authorization => "Bearer #{access_token}",
                         :content_type => "application/json",
                     )
                     .post(
-                        "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}/line_items/#{lineitem_id}/modifications",
+                        "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders",
                         :json => {
-                            "modifier": {
-                                "id": modId
-                            }
+                            "state":    "open",
+                            "note":     "MOB APP #{"| DRIVE THROUGH" if is_drive_through}",
+                            "title":    "Thanks for the remote order!"
                         }
                     )
-                    modifier_resp = new_mod_lineitems_request.parse
+                    order_resp = new_order_request.parse
+                    order_id = order_resp["id"]
                 rescue HTTP::ResponseError => e
-                    raise "Error on new modId for lineitem: #{e.message}"
+                    raise "Error on new order: #{e.message}"
 
                     render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
                     return
                 end
+                # 1.1 if auth -> add that to user
+                if params[:auth] != nil && user = get_user(params[:auth]["token"])
+                    user.orders << "#{shop_id}|#{order_id}"
+                    if !user.save
+                        render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                        return
+                    end
+                    # 1.2 if remote auth -> add that to order
+                end
+
+                remote_user = user.remote_id if user !=nil
+
+                modifierIdsPerItem = order.reduce({}) do |acc, item|
+                    selected_mods = item["selectedModifiers"] || []
+                    acc[item["uuid"]] = selected_mods.map {|mod| mod["selectedModifier"]["id"]}
+                    acc
+                end
+
+                # 2. update that shit with bulk items
+                begin
+                    puts "Setting line items for shop_id: #{shop_id}"
+                    new_order_lineitems_request = HTTP
+                    .headers(
+                        :authorization => "Bearer #{access_token}",
+                        :content_type => "application/json",
+                    )
+                    .post(
+                        "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}/bulk_line_items",
+                        :json => {
+                            "items": order.map do |item|
+                                item[:alternateName] = item["uuid"] #!!!
+                                item[:note] = "through mob app"
+                                item[:userDate] = "for #{user.email}" if user != nil
+                                item
+                            end
+                        }
+                    )
+                    lineitems_resp = new_order_lineitems_request.parse
+                rescue HTTP::ResponseError => e
+                    raise "Error on new lineitems order: #{e.message}"
+
+                    render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                    return
+                end
+
+                # 3. update EVERY item with modifiers
+                lineitems_resp.each do |lineitem|
+                    lineitem_id = lineitem["id"]
+                    modifiers_to_add = modifierIdsPerItem[lineitem["alternateName"]] || []
+                    # 3.1 ADD EVERY FUCKING MOD SEPARATELY TO EVERY FREAKING ITEM???
+                    modifiers_to_add.each do |modId|
+                        begin
+                            puts "Setting modifier #{modId} for lineitem: #{lineitem_id}"
+                            new_mod_lineitems_request = HTTP
+                            .headers(
+                                :authorization => "Bearer #{access_token}",
+                                :content_type => "application/json",
+                            )
+                            .post(
+                                "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}/line_items/#{lineitem_id}/modifications",
+                                :json => {
+                                    "modifier": {
+                                        "id": modId
+                                    }
+                                }
+                            )
+                            modifier_resp = new_mod_lineitems_request.parse
+                        rescue HTTP::ResponseError => e
+                            raise "Error on new modId for lineitem: #{e.message}"
+
+                            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                            return
+                        end
+                    end
+                end
+
+                total_cost = 0
+                total_tax = 0
+
+                # 5. CALCULATE TOTAL AND UPDATE THAT FUCK
+                order.each do |item|
+                    total_cost = total_cost + item["priceCalculated"];
+                    item_tax_rate = item["taxRates"]["elements"] || []
+                    item_tax_perc = item_tax_rate.reduce(0) {|acc, tax_rate| (acc +  (tax_rate["rate"].to_f)/100000)}
+                    total_tax += item["priceCalculated"] * item_tax_perc/100
+                end
+
+                begin
+                    puts "Updating order #{order_id} with total: #{(total_cost+total_tax).round}"
+                    new_order_lineitems_request = HTTP
+                    .headers(
+                        :authorization => "Bearer #{access_token}",
+                        :content_type => "application/json",
+                    )
+                    .post(
+                        "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}",
+                        :json => {
+                            "total": (total_cost + total_tax).round
+                        }
+                    )
+                    lineitems_resp = new_order_lineitems_request.parse
+                rescue HTTP::ResponseError => e
+                    raise "Error on new updateing order with cost: #{e.message}"
+
+                    render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                    return
+                end
+
+                # 6. get that shit and send results back
+                # optionally -> get and send the receipt
+                remote_order = get_remote_order(access_token, shop_id, order_id)
+                render json: {:status => 200, :data => {order: remote_order}}
+            else
+                render :json => {:message => "shop not authorized", reset_app_state: true}, :status => 409
             end
+        else
+            render :json => {:message => "shop not found", reset_app_state: true}, :status => 404
         end
-
-        total_cost = 0
-        total_tax = 0
-
-        # 5. CALCULATE TOTAL AND UPDATE THAT FUCK
-        order.each do |item|
-            total_cost = total_cost + item["priceCalculated"];
-            item_tax_rate = item["taxRates"]["elements"] || []
-            item_tax_perc = item_tax_rate.reduce(0) {|acc, tax_rate| (acc +  (tax_rate["rate"].to_f)/100000)}
-            total_tax += item["priceCalculated"] * item_tax_perc/100
-        end
-
-        begin
-            puts "Updating order #{order_id} with total: #{(total_cost+total_tax).round}"
-            new_order_lineitems_request = HTTP
-            .headers(
-                :authorization => "Bearer #{access_token}",
-                :content_type => "application/json",
-            )
-            .post(
-                "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}",
-                :json => {
-                    "total": (total_cost + total_tax).round
-                }
-            )
-            lineitems_resp = new_order_lineitems_request.parse
-        rescue HTTP::ResponseError => e
-            raise "Error on new updateing order with cost: #{e.message}"
-
-            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
-            return
-        end
-
-        # 6. get that shit and send results back
-        # optionally -> get and send the receipt
-        remote_order = get_remote_order(access_token, shop_id, order_id)
-        render json: {:status => 200, :data => {order: remote_order}}
     end
 
     def get_receipt
@@ -192,44 +202,49 @@ class Clover::Merchant::OrderCloverController < ApplicationController
         order_id        = params["order_id"]
         merchant_id     = params[:merchant_id] # sandbox Test Merchant
 
-        shop            = get_shop(params[:merchant_id])
-        shop_id         = shop.remote_id
-        access_token    = shop.token
+        if shop = get_shop(params[:merchant_id])
+            shop_id         = shop.remote_id
+            access_token    = shop.token
 
-        cancelled_order_resp = {}
+            cancelled_order_resp = {}
 
-        if user = get_user(params[:auth]["token"])
-            user.orders.map do |orderSet|
-                orderSetArr = orderSet.split("|")
-                set_shop_id = orderSetArr.first
-                set_order_id    = orderSetArr.last
+            # 1. check if shop still available
 
-                if set_shop_id == shop_id && set_order_id == order_id
+            if user = get_user(params[:auth]["token"])
+                user.orders.map do |orderSet|
+                    orderSetArr = orderSet.split("|")
+                    set_shop_id = orderSetArr.first
+                    set_order_id    = orderSetArr.last
 
-                    begin
-                        puts "Cancelling order #{order_id}"
-                        cancel_order_req = HTTP
-                        .headers(
-                            :authorization => "Bearer #{access_token}",
-                            :content_type => "application/json",
-                        )
-                        .post(
-                            "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}",
-                            :json => {
-                                "state": "cancelled"
-                            }
-                        )
-                        cancelled_order_resp = cancel_order_req.parse
-                    rescue HTTP::ResponseError => e
-                        raise "Error on new updateing order with cost: #{e.message}"
+                    if set_shop_id == shop_id && set_order_id == order_id
 
-                        render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
-                        return
+                        begin
+                            puts "Cancelling order #{order_id}"
+                            cancel_order_req = HTTP
+                            .headers(
+                                :authorization => "Bearer #{access_token}",
+                                :content_type => "application/json",
+                            )
+                            .post(
+                                "#{@clover_base_api_url}/v3/merchants/#{shop_id}/orders/#{order_id}",
+                                :json => {
+                                    "state": "cancelled"
+                                }
+                            )
+                            cancelled_order_resp = cancel_order_req.parse
+                        rescue HTTP::ResponseError => e
+                            raise "Error on new updateing order with cost: #{e.message}"
+
+                            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+                            return
+                        end
                     end
                 end
-            end
 
-            render json: {:status => 200, :data => {order: cancelled_order_resp}}
+                render json: {:status => 200, :data => {order: cancelled_order_resp}}
+            end
+        else
+            render :json => {:message => "shop not found", reset_app_state: true}, :status => 404
         end
     end
 
@@ -238,29 +253,35 @@ class Clover::Merchant::OrderCloverController < ApplicationController
         order_id        = params["order_id"]
         merchant_id     = params["merchant_id"] # sandbox Test Merchant
 
-        shop            = get_shop(params["merchant_id"])
-        shop_id         = shop.remote_id
-        access_token    = shop.token
+        if shop = get_shop(params["merchant_id"])
+            shop_id         = shop.remote_id
+            access_token    = shop.token
 
-        if user = get_user(params[:auth]["token"])
-            user.orders = user.orders.reject do |orderSet|
-                orderSetArr = orderSet.split("|")
-                set_shop_id = orderSetArr.first
-                set_order_id    = orderSetArr.last
+            if user = get_user(params[:auth]["token"])
+                user.orders = user.orders.reject do |orderSet|
+                    orderSetArr = orderSet.split("|")
+                    set_shop_id = orderSetArr.first
+                    set_order_id    = orderSetArr.last
 
-                set_shop_id == shop_id && set_order_id == order_id
+                    set_shop_id == shop_id && set_order_id == order_id
+                end
+
+                if !user.save
+                    render :json => {:error => '[orders|delete]: too bad'}, :status => 500
+                    return
+                end
+
+                render json: {:status => 200, :data => {orders: user.orders}}
             end
-
-            if !user.save
-                render :json => {:error => '[orders|delete]: too bad'}, :status => 500
-                return
-            end
-
-            render json: {:status => 200, :data => {orders: user.orders}}
+        else
+            render :json => {:message => "shop not found", reset_app_state: true}, :status => 404
         end
     end
 
     def get_remote_order(access_token, shop_id, order_id)
+
+        # 1. check if shop still available
+
         begin
             puts "Getting order #{order_id}"
             new_order_lineitems_request = HTTP
@@ -293,7 +314,12 @@ class Clover::Merchant::OrderCloverController < ApplicationController
             shop_id     = orderSetArr.first
 
             if shop = shopsDic[shop_id.to_sym]
-            else shop = get_shop(shop_id)
+            else
+                if shop = get_shop(shop_id)
+                else
+                    rejected_orders << orderSet
+                    break
+                end
             end
 
             shopsDic[shop_id.to_sym] = shop
@@ -355,15 +381,41 @@ class Clover::Merchant::OrderCloverController < ApplicationController
     end
 
 	def get_user(user_auth_token)
-		User.find_by_auth_token(user_auth_token) or not_found
+		User.find_by_auth_token(user_auth_token)
 	end
 
     def get_shop(remote_id)
-        Shop.find_by_remote_id(remote_id) or not_found
+        Shop.find_by_remote_id(remote_id)
     end
 
     def not_found
         raise ActionController::RoutingError.new('Not Found')
+    end
+
+    def is_rmote_shop_authorized(shop_id, access_token)
+        is_rmote_shop_authorized = true
+        begin
+            puts "Getting info for shop_id: #{shop_id}"
+            merchant_request = HTTP
+            .headers(:authorization => "Bearer #{access_token}")
+            .get("#{@clover_base_api_url}/v3/merchants/#{shop_id}?expand=address,openingHours")
+            merchant_resp = merchant_request.parse
+            if merchant_request.status == 401
+                if rejected_shop = Shop.find_by_remote_id(shop_id)
+                    is_rmote_shop_authorized = false
+                    Shop.delete(rejected_shop.id)
+                end
+            end
+
+        rescue HTTP::ResponseError => e
+            raise "Error encountered while getting access token: #{e.message}"
+
+            render :json => {:error => JSON.parse(e.response_body)["errors"]}, :status => 400
+            is_rmote_shop_authorized = false
+            is_rmote_shop_authorized
+        end
+
+        is_rmote_shop_authorized
     end
 
 end

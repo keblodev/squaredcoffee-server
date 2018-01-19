@@ -43,7 +43,7 @@ class Clover::Merchant::MerchantsCloverController < ApplicationController
                 .get("#{@clover_base_api_url}/v3/merchants/#{shop_id}?expand=address,openingHours")
                 merchant_resp = merchant_request.parse
                 if merchant_request.status == 401
-                    if rejected_shop = Shop.find_by_remote_id(shop.remote_id)
+                    if rejected_shop = Shop.find_by_remote_id(shop_id)
                         reset_app_state = true
                         Shop.delete(rejected_shop.id)
                         break

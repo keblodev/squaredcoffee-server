@@ -35,7 +35,6 @@ Rails.application.routes.draw do
 
     get '/shops/clover/:id/categories'      => 'clover/merchant/items_clover#get_all_categories_with_items'
     get '/shops/clover/:id/items'           => 'clover/merchant/items_clover#get_all_with_modifies'
-    get '/shops/clover/:id/items/:itemId'   => 'clover/merchant/items_clover#get_with_modifiers'
 
     post '/shops/clover/:id/order/new'                   => 'clover/merchant/order_clover#new'
     get '/shops/clover/:id/order/:order_id'              => 'clover/merchant/order_clover#get'
