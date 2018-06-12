@@ -11,8 +11,8 @@
     "dev": "npm run dev_migrate && RAILS_ENV=development bundle exec rails s -b 0.0.0.0",
     "start": "bundle exec rails s -b 0.0.0.0",
     "dump": "rake db:dump format=tar",
-    "migrate": "RAILS_ENV=production rake db:create_migrate",
-    "start_prod": "RAILS_ENV=production npm run dump && npm run migrate && bundle exec foreman start",
+    "migrate": "rake db:create_migrate",
+    "start_prod": "npm run dump && npm run migrate && bundle exec foreman start",
     "drop" : "rake db:drop db:reset db:create db:migrate"
   },
   "repository": {
