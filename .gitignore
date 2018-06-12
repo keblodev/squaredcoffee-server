@@ -11,6 +11,8 @@
 db/test
 db/development
 db/production
+db/backups
+db_backups
 
 db/*.sqlite3-journal
 
