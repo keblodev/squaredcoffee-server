@@ -1,4 +1,4 @@
-FROM ruby:2.3.1-alpine
+FROM ruby:2.3.7-alpine
 MAINTAINER Roman Z <imakegreat.com@gmail.com>
 
 RUN apk --update add --virtual build-dependencies \
@@ -8,13 +8,15 @@ RUN apk --update add --virtual build-dependencies \
                                 build-base \
                                 libxml2-dev \
                                 libxslt-dev \
-                                postgresql-dev \
                                 sqlite-dev \
                                 nodejs \
                                 tzdata \
                                 && rm -rf /var/cache/apl/*
 
-RUN apk update && apk add postgresql-dev libffi-dev
+RUN apk update && apk add libffi-dev
+
+RUN apk update && apk upgrade
+RUN apk add postgresql-client build-dependencies postgresql-dev postgresql
 
 RUN bundle config build.nokogiri --use-system-libraries
 
